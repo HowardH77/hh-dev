@@ -1,8 +1,8 @@
-# hh-dev
-HH dev environment
+HH dev environment (Unix home directory)
 
-Directory structure:
-  ./     Home directory rc files
-  bin/   Scripts/binaries/crontab
-  lib/   Library archives
-  
+| directory | description |
+|-|-|
+| ./ | Home directory: rc files, startup scripts, etc |
+| ./bin/ | scripts / binaries / crontab |
+| ./bin/Src | source code for bin executables + Makefile |
+| ./lib/ | library archives |
