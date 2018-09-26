@@ -1,0 +1,30 @@
+#! /bin/sh
+#  Description: 1. Clean-up/remove files and empty directories in $HOME_TMPDIR
+#               2. Remove a.out, core, and other misc useless files
+#  Note: '/bin/find' is explicitly specified, since cygwin under windows may
+#         place /c/windows/system32/find before /bin/find in $PATH
+
+TMPDIR=$HOME/.tmp
+
+# Note: Seems the following ls command pipe is slower than the following find command pipe...
+# ls -1d $HOME_TMPDIR/*/ | while read dir; do
+#   ls -1a $dir | wc -l | {
+#     read nfiles
+#     if [ $nfiles -eq 2 ]; then echo rmdir $dir; fi
+#   }
+# done 2>/dev/null
+find $TMPDIR -mindepth 1 -type d -print | 
+  while read dir; do
+    if [[ -z "`ls -A $dir`" ]]; then
+      rmdir "$dir"
+    fi
+  done
+
+set -f
+rm_files='-name core -o -name *.stackdump
+	-o -name a.out -o -name a.exe
+	-o -name nohup.out
+'
+find $HOME $rm_files -exec /bin/rm '{}' \; &
+find $HOME_TMPDIR -type f -atime +7 -exec /bin/rm '{}' \; &
+exit 0
