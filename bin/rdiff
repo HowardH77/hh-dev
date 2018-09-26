@@ -1,0 +1,46 @@
+#! /bin/sh
+#  Name: 
+#  Synopsis:    rdiff [-b] [[user@]host1:]file1 [[user@]host2:]file2
+#               rcmp [[user@]host1:]file1 [[user@]host2:]file2
+#  Description: Run diff/cmp on remote files.  
+#               Note: This script uses scp or rcp to copy remote files.
+#                     (~/.ssh/.authorized_keys, or ~/.rhosts may need to be configured)
+#               Note2: Simple pattern matching is used to determine if a file is remote or local 
+#                      The filename matches a "user@host:" or "host:" prefix pattern.  To force
+#                      a match for a local file, specify the full path with the leading '/'.
+
+getfile() 
+{
+	case "$1" in
+	  /*)  # local file, full path specified
+	       ln -s "$1" "$2" ;;
+	  *@*:*|*:*)  # remote file, user@rhost:filename | rhost:filename
+		     scp "$1" "$2" ;;
+	  *)  # local file, relative path specified
+	       ln -s "$PWD/$1" "$2";;
+	esac
+}
+
+
+# Main
+case $0 in
+  *rdiff) cmd=diff;;
+  *rcmp) cmd=cmp;;
+esac
+
+while getopts b opt; do
+	case $opt in
+	  b) options="${options} -b";;
+	esac
+done
+shift `expr $OPTIND - 1`
+
+umask 077
+TMPDIR=/usr/tmp
+tmpfile1=$TMPDIR/r${cmd}1.$$
+tmpfile2=$TMPDIR/r${cmd}2.$$
+trap "rm -f $tmpfile1 $tmpfile2" 0 15
+
+if getfile "$1" "$tmpfile1" && getfile "$2" "$tmpfile2"; then
+	eval $cmd $options $tmpfile1 $tmpfile2
+fi
