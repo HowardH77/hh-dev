@@ -1,0 +1,13 @@
+#! /bin/sh
+# Name:        vi pipe
+# Description: Pipe the output of a command to a tempfile and edit the file
+#              Example: ls -l | vip
+
+#function vip
+{
+	tmpfile="$HOME/.tmp/$$.vip"
+	trap "rm -f $tmpfile" 0 9 15
+	cat > $tmpfile
+	vi "$@" $tmpfile </dev/tty >/dev/tty
+	rm -f $tmpfile 2>/dev/null
+}
