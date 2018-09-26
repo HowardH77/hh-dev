@@ -1,0 +1,55 @@
+#! /bin/sh
+# Name:         $Id: rm,v 1.2 2008/09/09 14:37:21 hhong Exp $
+# Synopsis:     rm [-fir] file ...
+# Description:  A Safe rm (move file(s) to a tmp directory for later deletion).  
+#               Files in the tmp directory that have not been accessed in N days
+#               are permanently deleted the next time the rm command is run.  
+#               Options: -f  (force) Run "/bin/rm" instead of moving files to the tmpdir
+#                        -i  Interactive mode
+#                        -r  move (Recursively) a directory tree to the tmp directory
+#               Caveat: mv fails if the filename matches a directory name in the $tmpdir directory
+
+tmpdir=$HOME/.tmp
+while getopts fir opt; do
+	case $opt in
+	f) force="-f";;
+	i) interactive="-i";;
+	r) recursive="-r";;
+	\?) exit 1;;
+	esac
+done
+shift `expr $OPTIND - 1`
+
+if [ "$force" ]; then                             # Run /bin/rm if '-f' is specified!
+	/bin/rm -f $interactive $recursive "$@";  # This is useful in shell functions
+	exit $?                                   # when you want the real rm executable
+fi
+
+for file; do
+	if [ -n "$interactive" ]; then
+		echo -n "remove '${file}'? "
+		read yn
+		if [ "$yn" != "Y" -a "$yn" != "y" ]; then
+			continue
+		fi
+	fi
+	if [ -d "$file" ]; then
+		if [ -n "$recursive" ]; then
+			mv -f "$file" "$tmpdir" || retcode=2
+		else
+			echo "$0: cannot remove '$file': Is a directory"
+			retcode=1
+		fi
+		continue
+	fi
+	bf=`basename "$file"`
+	mv -f "$file" "$tmpdir"
+	touch "$tmpdir/$bf";  # For post cleanup, $file will be deleted N days from today
+done
+
+# Clean up files, permanently delete files after atime days have elapsed
+{ /bin/find "$tmpdir" -type f -atime +7 -exec /bin/rm '{}' \;
+  /bin/find "$tmpdir" -mindepth 1 -type d -exec rmdir '{}' \; 2>/dev/null 
+} &
+
+exit ${retcode:-0}
