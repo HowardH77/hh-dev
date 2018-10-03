@@ -1,0 +1,5 @@
+#! /bin/sh
+#  Set xterm title
+#      Default = "(`tty`) $user@$hostname:$PWD"
+
+echo "\033]0;${@:-(`tty|sed 's+/dev/++'`) ${USER}@${HOSTNAME:-`hostname`}:${PWD}}\007"

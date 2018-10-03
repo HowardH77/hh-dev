@@ -1,0 +1,49 @@
+#! /bin/sh
+#  Synopsis:    Math [-i inputbase] [-o outputbase] [number | expression ] ...
+#  Description: Math performs base number conversions, and 'bc -l' calculations
+#               Note: Renaming or ln'ing (hard/symbolic) the script alters the default input 
+#                     and output base (ie: b2o,b2d,b2x, o2b,o2d,o2x, d2b,d2o,d2x, x2b,x2d,x2d)
+#                                          (b=binary, o=octal, d=decimal, x=hexadecimal)
+#  Example Usage: $ Math;  # Interactive decimal calculator
+#                 $ Math '56*87' '42*57'
+#                 $ x2d FF 'FF + 1'
+#                 $ echo 'ff ff+1' | x2d 
+#                 $ square '(2+3)' 1.11111111 
+
+obase=10
+ibase=10
+case $0 in
+  *b2o) ibase=2;  obase=8; unset exp ;;
+  *b2d) ibase=2;  obase=10; unset exp ;;
+  *b2x) ibase=2;  obase=16; unset exp ;;
+  *o2b) ibase=8;  obase=2; unset exp ;;
+  *o2d) ibase=8;  obase=10; unset exp ;;
+  *o2x) ibase=8;  obase=16; unset exp ;;
+  *d2b) ibase=10; obase=2; unset exp ;;
+  *d20) ibase=10; obase=8; unset exp ;;
+  *d2x) ibase=10; obase=16; unset exp ;;
+  *x2b) ibase=16; obase=2; unset exp ;;
+  *x2o) ibase=16; obase=8; unset exp ;;
+  *x2d) ibase=16; obase=10; unset exp ;;
+  *square) ibase=10; obase=10; exp=2 ;;
+  *cube) ibase=10; obase=10; exp=3 ;;
+  *Math) while getopts i:o: opt; do
+                case "$opt" in
+                  i) ibase=$OPTARG;;
+                  o) obase=$OPTARG;;
+                esac
+        done
+        shift `expr $OPTIND - 1`
+        ;;
+esac
+
+{ 
+        echo "obase=$obase"
+        echo "ibase=$ibase"
+        if [ $# -gt 0 ]; then
+                for expr do echo "$expr${exp:+^$exp}"; done
+        else
+                cat
+        fi | if [ $ibase -eq 16 ]; then tr 'a-f' 'A-F'; else cat; fi
+} | bc -l 
+

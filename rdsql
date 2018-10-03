@@ -1,0 +1,166 @@
+#! /bin/bash
+#  Synopsis:    sql [-S dbserver] [-U user] [-P passwd] [-D database] \
+#                   [-w width] [-s colseparator] [-e] [-b] [-n] [-c] sql_command ...
+#               sp_help [-S dbserver] [-U user] [-P passwd] [-D database] objname ...
+#               sp_helprotect [-S dbserver] [-U user] [-P passwd] [-D database] objname ...
+#               showplan [-S dbserver] [-U user] [-P passwd] [-D database] [-n] sql_command ...
+#  Description: Execute SQL statements, sp_help objname
+#               Options:  -S     Specify Server
+#                         -U|-u  Specify user
+#                         -P|-p  Specify passsword
+#                         -D|-d  Specify database
+#                         -s     Set Sybase column separator character
+#                         -e     Set Sybase echo command option (include each command issued to isql in the output)
+#                         -b     Set Sybase 'Suppress table headers' option
+#                         -n     Set Sybase 'Don't execute sql_command' option
+#                         -c     Set Sybase 'set nocount on' option
+#               Note: All scripts are hard-link'ed to sql ($0 is used to set default values)
+
+set_mysql_defaults()
+{
+	if [ -z "$dbuser" ]; then 
+		dbuser=rundeckuser; 
+	fi
+	if [ -z "$dbpass" ]; then 
+		dbpass=$(echo 'cnVuZGVja3Bhc3N3b3JkCg=='|base64 -d)
+	fi
+	if [ -z "$database" ]; then 
+		dbpass=rundeck
+	fi
+}
+
+
+set_sybase_defaults()
+{
+        local arg0=$1
+        case $arg0 in
+          rdsql) 
+                dbtype=mysql
+		set_default_user_pass $dbsvr
+                database=rundeck
+	        isql_user='-u rundeckuser';
+	        isql_pass='-p'
+                ;;
+          sql)
+                if [ -n "$database" ]; then set_defaults "$database"; fi
+                if [ -z "$isql_svr" ]; then isql_svr=$DSQUERY; fi
+                if [ -z "$isql_user" ]; then
+			set_default_user_pass $isql_svr
+                fi
+                ;;
+          sp_help|sp_helprotect|sp_HELP)
+                sp_help=$arg0
+                isql_opts="-e $isql_opts"
+                if [ -z "$isql_svr" ]; then isql_svr=PRODUCTION_TEST; fi
+                if [ -z "$isql_user" ]; then
+			set_default_user_pass $isql_svr
+                fi
+                ;;
+          showplan)
+                set_showplan=1
+                ;;
+        esac
+}
+
+
+# Main
+# dbtype=sybase;  # Set default database type
+dbtype=mysql;  # Set default database type
+
+arg0=`basename $0`
+newline='
+';  # Newline character (makes for easier code formatting)
+for arg in "$@"; do
+        case $arg in
+          *\ *) argv="${argv:+$argv }'$arg'";;
+          *) argv="${argv:+$argv }$arg";;
+        esac
+done
+while getopts v:U:u:P:p:D:d:Sw:s:ebnc opt; do
+        case $opt in
+          v) echo "+ $arg0 $argv" ;;
+          U|u) db_user=$OPTARG;;
+          P|p) db_pass=$OPTARG;;
+          D|d) database=$OPTARG;;
+	     # Sybase isql cmdline options follow
+          S) db_svr=$OPTARG;;
+          X) isql_opts="$isql_opts -X";;
+          w) width=$OPTARG;;
+          s) delimiter="$OPTARG" ;;
+          e) isql_opts="-e $isql_opts";;
+          b) isql_opts="-b $isql_opts" ;;
+          n) noexec=1;;
+          c) nocount="set nocount on${newline}go" ;;
+	     # End Sybase isql cmdline options
+	     # mysql cmdline options follow
+	     # End mysql cmdline options 
+          \?) exit 1 ;;
+        esac
+done
+shift `expr $OPTIND - 1`
+
+case $dbtype in
+  sybase) . $HOME/bin/sybase.env
+        # SYBASE=?;  export SYBASE
+        # alias isql=$SYBASE/isql
+        set_sybase_defaults $arg0
+	isql=isql
+	isql_opts="-w ${width:-4096} $isql_opts ${delimiter:+ -s "$delimiter"} -X"
+        isql_svr=${db_svr:+-S $db_svr} 
+	isql_user=${db_user:+-U $db_user} 
+	isql_pass=${db_pass:+-P "$db_pass"} 
+	isql_db=${database:+-D $database}
+	use_db="${db_database:use $db_database}${newline}${isql_cmd_end}"
+	isql_cmd_end=go
+	if [ -z "$dbpass" ]; then
+		. $HOME/.bin/hhlib.sh
+		get_password dbpass >/dev/tty </dev/tty
+	fi
+	if [ ${set_showplan:-0} -eq 1 ]; then
+		show_plan="set showplan on${newline}${isql_cmd_end}"
+		if [ ${noexec:-0} -eq 1 ]; then
+			show_plan="$show_plan${newline}set noexec on${newline}${isql_cmd_end}"
+		fi
+	fi
+	;;
+  mysql)
+        set_dbs.env mysql
+	if [ -z "$db_user" ]; then db_user=rundeckuser; fi
+	if [ -z "$db_pass" ]; then db_pass=rundeckpassword; fi
+	if [ -z "$database" ]; then database=rundeck; fi
+	isql_cmd_end=";${newline}"
+	;;
+esac
+
+for arg do
+        case "$sp_help" in
+          sp_HELP)
+                sql_cmds="$sql_cmds
+                        if (select type from sysobjects where name like '$arg') = 'U'
+                                exec sp_help $arg
+                        else
+                                exec sp_helptext $arg${newline}${isql_cmd_end}"
+                ;;
+          *)
+                sql_cmds="$sql_cmds${newline}${sp_help:+$sp_help }$arg${isql_cmd_end}${newline}"
+                ;;
+        esac
+done
+
+if [ -z "$sql_cmds" ]; then
+        SQL "$isql_svr" "$isql_user" "$isql_pass" "$isql_database" "$isql_opts"
+else
+        # nl -ba <<-end_sql
+        # { $isql $isql_svr $isql_user $isql_pass $isql_database $isql_opts | hide_passwd_prompt; } <<-end_sql
+        { SQL "$isql_svr" "$isql_user" "$isql_pass" "$isql_database" "$isql_opts" | hide_passwd_prompt; } <<-end_sql
+		${dbpass}
+		${use_database}
+		$show_plan
+		$nocount
+		$sql_cmds
+	end_sql
+fi
+exit $?
+
+:!sh -x % -S $DSQUERY -D database 'sp_helptext stored_proc1' 'sp_helptext stored_proc2'
+:!% -S $DSQUERY -D database 'sp_helptext stored_proc1' 'sp_helptext stored_proc2'

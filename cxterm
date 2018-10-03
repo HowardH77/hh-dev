@@ -1,0 +1,34 @@
+#! /bin/bash
+#  Synopsis:    cxterm [xterm_options ...]
+#  Description: Randomly colored xterm
+
+case "$RANDOM" in
+  *0) fg=black;  bg=yellow ;;
+  *1) fg=white;  bg=darkgreen;;
+  *2) fg=white;  bg=brown;;
+  *3) fg=black;  bg=lightblue;;
+  *4) fg=red;    bg=white;;
+  *5) fg=black;  bg=orange;;
+  *6) fg=navy;   bg=tan;;
+  *7) fg=black;  bg=grey;;
+  *8) fg=white;  bg=blue;;
+  *9) fg=gold;   bg=darkred ;;
+esac
+exec xterm -fg ${fg:-white} -bg ${bg:-black} "$@" >/dev/null 2>&1
+
+
+# Good color combos - Note this is sorted list
+  *X) fg=black;  bg=gold ;;
+  *X) fg=black;  bg=grey ;;
+  *X) fg=black;  bg=lightblue ;;
+  *X) fg=gold;   bg=black ;;
+  *X) fg=white;  bg=black ;;
+  *X) fg=white;  bg=black ;;
+  *X) fg=white;  bg=blue ;;
+  *X) fg=white;  bg=darkgreen ;;
+  *X) fg=white;  bg=purple ;;
+  *X) fg=white;  bg=red ;;
+
+# Bad color combos :(
+  # fg=black; bg=purple ;;  
+

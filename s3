@@ -1,0 +1,78 @@
+#! /bin/bash
+#  Synopsis:    s3 ls [bucket/key ...]
+#               s3 cat [bucket/key ...]
+#               s3 cp [bucket/key ...] local_file-or-directory;  # Note: local_directory required if copying multiple files
+#  Description: Run misc file operations on files in AWS s3 buckets
+#               Todo: Add support for directory/filename wildcards 
+# 
+# aws s3 ls s3://keyme-kiosk-logs/`date +%Y/%m/%d`/disk_space_check/
+# s3ls [-d yyyy/mm/dd ] job_name_folder
+# s3cat [-d yyyy/mm/dd ] job_name_folder/filename ...
+# s3cp [-d yyyy/mm/dd ] job_name_folder/filename ... local_directory
+
+s3_ls()
+{
+	echo ls "$@"
+}
+
+copyfile()  # copyfile file1 [file2 ... fileN] destdir
+{
+	local n_args arg dest_dir f indx
+	local start_indx=1 list=0
+	n_args=$#
+	for arg; do
+		case "$arg" in
+		  -l) list=1; (( ++start_indx )) ;;
+		  *) break ;;
+		esac
+	done
+	dest_dir=$(eval "echo \${$n_args}")
+	indx=1
+	for f; do
+		if [ $indx -ge $start_indx -a $indx -lt $n_args ]; then
+			cp $f $dest_dir &&
+				if [ $list -eq 1 ]; then echo "$dest_dir/`basename $f`"; fi ##
+				# if [ $list -eq 1 ]; then ls "$dest_dir/`basename $f`"; fi
+		fi
+		(( ++indx ))
+	done
+}
+
+
+do_cmd()
+{
+	local cmd=$1; shift
+	local TMPDIR=${TMPDIR:-/tmp}/$arg0.$$
+	if mkdir -p "$TMPDIR"; then
+		trap "rm -rf $TMPDIR" 0 15
+		copyfile "$@" "$TMPDIR" && $cmd $TMPDIR/*
+	else
+		return 1
+	fi
+}
+
+
+# Main
+arg0=`basename $0`
+while getopts o: opt; do
+	case $opt in
+	  o) options="${options:+$options }$OPTARG" ;;
+	  \?) exit 1;;
+	esac
+done
+shift `expr $OPTIND - 1`
+
+case "$0" in
+  *ls)  s3_ls "$@"
+	;;
+  *cat) for f; do s3_cat "$f"; done
+	;;
+  *cp)  copyfile "$@"
+	;;
+  *vi)  do_cmd "vi $options" "$@"
+	;;
+  *gimp) do_cmd "gimp $options" "$@"
+        ;;
+esac
+exit
+

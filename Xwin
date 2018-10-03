@@ -1,0 +1,32 @@
+#! /bin/sh
+#  Synopsis:    Xwin save|restore 
+#  Description: Save/Restore window positions, geometries (this is a poor Xsession imitation)
+
+opt=$1
+config=${2:-$HOME/.Xwin.wmctrl}
+
+case "$opt" in
+  save)
+	wmctrl -Gl > $config ;;  # Save windows positions, geometries
+  restore)
+	if [ -r "$config" ]; then
+		while read id desktop_num x y width height title; do
+			wmctrl -ir $id -e 0,$x,$y,$width,$height  # Restore windows position & geometry
+		done < $config
+	else
+		echo "$0: Error: cannot read xsession file '$config'" >&2
+		exit 1
+	fi
+	;;
+  home) # Move 
+        echo 'Please select the window to home by clicking the mouse in that window.' >&2
+	xwininfo | grep -e 'Window id:' -e 'Width:' -e 'Height:' | {
+		read xwininfo_label Window_label id_label window_id etc
+		read width_label width
+		read height_label height
+		wmctrl -ir $window_id -e 0,0,0,$width,$height  # Move window to 0,0
+	}
+	;;
+  help|*)
+	echo 'Usage: Xwin [save|restore]' >&2 ;;
+esac

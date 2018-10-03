@@ -1,0 +1,13 @@
+chdir () 
+{ 
+	unset ndir
+	case $# in
+	  0) ndir=$HOME ;;
+	  2) ndir=`echo $PWD | sed -e "s*$1*$2*"` ;;
+	esac
+	'cd' "${ndir:-$1}" && if [ "${PWD#/*/*/}" = "$PWD" ]; then
+		PS1='$PWD> ';
+	else
+		PS1="..${PWD#${PWD%/*/*}}> ";
+	fi
+}

@@ -1,0 +1,4 @@
+#! /bin/sh
+#  Description: Remove Ctrl-M (CarriageReturn) from end-of-line, also remove Ctrl-Z (End-of-File) from Windows/DOS file.
+
+sed -e 's/$//' -e '$s///' "$@"

@@ -1,0 +1,40 @@
+#! /bin/sh
+#  Name:        $Id: ffpath,v 1.4 2008/10/09 12:18:51 hhong Exp $
+#  Synopsis:    ffpath.sh [-v envvar] [-s field_separator] [-[l1cm]] file ...
+#  Description: Search $PATH for file(s)
+#               Options: -v envvar  Specify environment variable
+#                        -s fs      Use 'fs' for the directory field separator
+#                        -l         list file info using 'ls -l' long format (default)
+#                        -1         list one file per line ie: 'ls -1'
+#                        -c         Use 'cat' to display the file
+#                        -m         Use 'more' to display the file
+#                        -e prog    Run 'prog' on file
+
+while getopts v:s:l1cme: opt; do
+        case "$opt" in
+          v) envvar=$OPTARG;;
+          s) sep=$OPTARG;;
+          l) display='lsl';;
+          1) display='ls1';;
+          c) display='cat';;
+          m) display='more';;
+          e) display='exec'; exec=$OPTARG;;
+          \?) exit 1;;
+        esac
+done
+shift $(( $OPTIND - 1 ))
+
+for file; do
+        eval echo \$${envvar:-PATH} | tr {$sep:-:} '\n' | while read dir; do
+                if [ -f "$dir/$file" ]; then
+                        case "${display:-lsl}" in
+                          ls1) ls -1 "$dir/$file";;
+                          lsl) ls -li "$dir/$file";;
+                          echo) echo "$dir/$file";;
+                          cat) cat "$dir/$file";;
+                          more) less -rXe "$dir/$file";;
+                          exec) eval $exec "$dir/$file";;
+                        esac
+                fi
+        done
+done

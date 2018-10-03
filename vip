@@ -1,0 +1,8 @@
+#! /bin/sh
+
+umask 077
+tmpfile=/tmp/.vip.$$
+trap "rm -f $tmpfile" 0 15
+umask 077
+tee $tmpfile
+vi "$@" $tmpfile >/dev/tty </dev/tty
