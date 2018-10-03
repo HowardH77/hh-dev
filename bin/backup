@@ -1,0 +1,60 @@
+#! /bin/bash
+#  Description: Backup file(s)
+#  Synopsis:    backup [-l] [-e file_extension] [-m max_num_backups] file ...
+#               Options: -l  Don't display list of backup files
+#                        -e  Specify file_extension (default = "backup")
+#                        -m  Specify max number of backups (default = 4)
+
+gen_file_extension()
+{
+	local filename=$1
+	local backup_extension=$(date +"${2}_%Y%m%d")
+	local max_backups=$3
+	local version
+	while true; do
+		if [[ ! -f $filename.${backup_extension}${version:+-$version} ]]; then
+			echo "$filename.${backup_extension}${version:+-$version}"
+			return 0
+		fi
+		if [ -z "$version" ]; then 
+			version=2
+		else
+			(( ++version )); 
+			if [ $version -gt $max_backups ]; then 
+				echo "Error: $arg0 '$filename' - Maximum number of backups ($max_backups) reached." >&2
+				return 1
+			fi
+		fi
+	done
+}
+
+
+# Main
+arg0=$(basename $0)
+while getopts le:m: opt; do
+	case $opt in
+	  l) list_backup_files=0 ;;
+	  e) extension=$OPTARG ;;
+	  m) max_backups=$OPTARG ;;
+	  \?) exit 2 ;;
+	esac
+done
+shift `expr $OPTIND - 1`
+
+for filename; do
+	if backup=$(gen_file_extension "$filename" ${extension:-backup} ${max_backups:-4}); then
+		cp -p "$filename" "$backup"
+		if [ $? -ne 0 ]; then
+			echo "$arg0: Warning - cp '$filename' '$backup' failed" >&2
+			retcode=1
+		elif [ ${list_backup_files:-1} -eq 1 ]; then 
+			if [ "$filename" != "$1" ]; then echo; fi  # If backing up more than one file, print blank line between backup files listing.
+			# ls -l "$filename" "$backup"
+			{ ls -l "$filename"; ls -lt "$filename".*; }
+			if [ $# -gt 2 ]; then echo; fi
+		fi
+	else
+		retcode=1
+	fi
+done
+exit ${retcode:-0}
