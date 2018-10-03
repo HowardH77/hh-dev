@@ -2,21 +2,21 @@
 #  Synopsis:    update_repo [-v] [-u upstream_repo_prefix] [-b branch]
 #  Description: Update repo(s) on github
 #               Options: -v Verbose output
-#                        -u Specify the "Upstream Repo prefix" eg: git@github.com:keyme
+#                        -u Specify the "Upstream Repo prefix"
 #                        -b Specify branch (default: master)
 
 arg0=$(basename $0)
 while getopts vu:b: opt; do
 	case $opt in
 	  v) verbose=1 ;;
-	  u) upstream_repo_prefix=$OPTARG ;;  # eg: "git@github.com:keyme"
+	  u) upstream_repo_prefix=$OPTARG ;;
 	  b) branch=$OPTARG ;;
 	esac
 done
 shift $(( $OPTIND - 1 ))
 verbose=${verbose:-0}
 branch=${branch:-master}
-upstream_repo_prefix=${upstream_repo_prefix:-git@github.com:keyme}
+upstream_repo_prefix=${upstream_repo_prefix:-git@github.com:XXX}
 
 tmp_repo=/tmp/update_repo_$$
 mkdir -p $tmp_repo;
@@ -48,5 +48,3 @@ for repo_url; do
 	fi
 done
 exit $?
-
-:!% -v git@github.com:HowardHong/ts-servicing-ops.git
