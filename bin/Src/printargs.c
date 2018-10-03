@@ -4,8 +4,8 @@
  *              shell scripts that escape the space, backslash, quote chars ('"`)
  *              and other wildcard characters (eg: "[*?]").
  *                Options: -c  Echo the command line
- *                         -i  Do not display argument indices
- *                         -q  Do not display single quotes surrounding each argument
+ *                         -i  Supress argument indices display
+ *                         -q  Supress single quotes surrounding each argument display
  */
 
 #include <stdlib.h>
