@@ -1,0 +1,28 @@
+#! /bin/sh
+#  Synopsis:    ff. [-lcm] [-e program] filename ...
+#  Description: find files.
+#               Options: -l  display directory long listing of file
+#                        -c  cat the file
+#                        -m  display the file using 'more' (or less)
+#                        -e  execute 'program' on the file
+
+set -o noglob
+while getopts lcme: opt; do
+	case "$opt" in
+	  l) print="$print -exec ls -ld {} ;" ;;
+	  c) print="$print -exec cat {} ;" ;;
+	  m) print="$print -exec less -E {} ;" ;;
+	  e) print="$print -exec $OPTARG {} ;" ;;
+	  \?) exit 1;;
+	esac
+done
+shift `expr $OPTIND - 1`
+
+unset names or
+for f; do
+	bf=$(basename "$f")
+	names="${names}${or}-name $bf"
+	or=' -o '
+done
+
+find . \( $names \) ${print:--print}
