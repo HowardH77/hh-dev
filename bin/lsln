@@ -1,5 +1,5 @@
 #! /bin/sh
-#  Synopsis:    lln filename ...
+#  Synopsis:    lsln filename ...
 #  Description: list symlink files
 #               Todo: Resolve intermediate symlinks 
 #                     eg: /root/asdf/symlink/jkl/123 -> /root/asdf/symlink-resolved/jkl/123  # 'symlink' sub-directory is a symlink
@@ -74,11 +74,9 @@ END  { # TRACE_ON = 1
 exit $?
 
 :!% /usr/bin/java /etc/localtime /usr/bin/aclocal 
-:!% $HOME/infrastructure/modules/rundeck/env/howard/data.tf
-:!cd $HOME/infrastructure/modules/rundeck/env/howard && % data.tf
 :!mkdir -p /tmp/d1/d2/d3; ln -s l1 /tmp/d1/d2/d3/l0; ln -s ../l2 /tmp/d1/d2/d3/l1; ln -s ../l3 /tmp/d1/d2/l2; echo l3 > /tmp/d1/l3
-:!lln /tmp/d1/d2/d3/l0
-:!cd /tmp/d1/d2/d3; lln l0
-:!cd /tmp/d1/d2; lln d3/l0
-:!cd /tmp/d1; lln d2/d3/l0
-:!cd /tmp; lln d1/d2/d3/l0
+:!% /tmp/d1/d2/d3/l0
+:!cd /tmp/d1/d2/d3; % l0
+:!cd /tmp/d1/d2; % d3/l0
+:!cd /tmp/d1; % d2/d3/l0
+:!cd /tmp; % d1/d2/d3/l0
