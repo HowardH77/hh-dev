@@ -1,36 +1,47 @@
 #! /bin/bash
-#  Synopsis:    Col [N_columns]
-#  Description: Print columns
+#  Synopsis:    Col [-h] [N_Columns]
+#  Description: Print column ruler
+#               Options: -h  Print a one-line ruler (default: two-line ruler)
+
+ruler_lines=2
+while getopts h opt; do
+	case "$opt" in
+	  h) ruler_lines=1 ;;
+	esac
+done
+shift $(expr $OPTIND - 1)
 
 ncols=${1:-80}
-unset cols
-dec=1
-count=10
-while [ $ncols -ge 10 ]; do
-	cols="${cols}123456789${dec}"
-	(( count = count + 10 ))
-	if (( $count % 100 == 0 )); then
-		dec=$(expr $count : '\(.\)')
+dec=10
+spaces='         '  # Initialized to 9 spaces
+while ((ncols >= 10)); do
+	line0="${line0}${spaces}${dec} " 
+	spaces=''
+	(( len =  10 - ${#dec} ))
+	while (( --len > 0 )); do spaces="$spaces "; done
+	(( dec1 = dec / 10 ))
+	if (( dec1 % 10 == 0 )); then 
+		dec1=$(expr $dec1 : '\(.\)');
 	else
-		(( dec = $count / 10 ))
+		(( dec1 = $dec1 % 10 ));
 	fi
-	(( ncols = ncols - 10 ))
+	line1="${line1}123456789${dec1}"
+	(( ncols -= 10 ))
+	(( dec += 10 ))
 done
-
+# echo "1234567891123456789212345678931234567894123456789512345678961234567897123456789812345678901234567891123456789112345678921234567893123456789412345678951234567896   TRACE"         
+# echo "         10        20        30        40        50        60        70        80        90        100       110       120       130       140       150       160 TRACE"
+if [ ${ruler_lines:-2} -eq 2 ]; then echo "$line0"; fi
 case $ncols in
-   9) echo "${cols}123456789" ;;
-   8) echo "${cols}12345678" ;;
-   7) echo "${cols}1234567" ;;
-   6) echo "${cols}123456" ;;
-   5) echo "${cols}12345" ;;
-   4) echo "${cols}1234" ;;
-   3) echo "${cols}123" ;;
-   2) echo "${cols}12" ;;
-   1) echo "${cols}1" ;;
-   0) echo "${cols}" ;;
+   9) echo "${line1}123456789" ;;
+   8) echo "${line1}12345678" ;;
+   7) echo "${line1}1234567" ;;
+   6) echo "${line1}123456" ;;
+   5) echo "${line1}12345" ;;
+   4) echo "${line1}1234" ;;
+   3) echo "${line1}123" ;;
+   2) echo "${line1}12" ;;
+   1) echo "${line1}1" ;;
+   0) echo "${line1}" ;;
 esac
 exit 0
-
-
-#                   1                   2                   3                   4                   5                   6                   7                   8                   9                   1
-# 1 2 3 4 5 6 7 8 9 1 1 2 3 4 5 6 7 8 9 2 1 2 3 4 5 6 7 8 9 3 1 2 3 4 5 6 7 8 9 4 1 2 3 4 5 6 7 8 9 5 1 2 3 4 5 6 7 8 9 6 1 2 3 4 5 6 7 8 9 7 1 2 3 4 5 6 7 8 9 8 1 2 3 4 5 6 7 8 9 9 1 2 3 4 5 6 7 8 9 1
