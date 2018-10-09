@@ -1,0 +1,49 @@
+# Name: $HOME/.localrc
+
+case "${HOSTNAME:-`uname -n`}" in
+  howard-hong-laptop-linux)  # KeyMe
+	if [ $USER != howard.hong ]; then   # Note: this file is source'd by "sudo -u <user> bash".  Skip it if user != me
+		return 1
+	fi
+	case $- in
+	  *i*) # Interactive shell
+		if [ -r  $HOME/.keyme_aliases ]; then 
+			. $HOME/.keyme_aliases; 
+		fi
+		touchscreen disable
+		touchpad disable
+		;;
+	esac
+	. $HOME/bin/git_env
+	export PYTHONDONTWRITEBYTECODE=1;  # Disable Bytecode (.pyc) files
+	;;
+
+  citi)  # Citigroup
+	;;
+
+  credit-agricole)  # Credit Agricole
+	;;
+
+  barcap)  # Barclays
+	;;
+
+  --dev)  # ??
+	;;
+
+  zweig)  # Zweig
+	;;
+
+  paine-webber)  # Paine-Webber
+	;;
+
+  lehman)  # Lehman
+	;;
+
+  jyacc)  # Jyacc
+	;;
+
+  aads)  # Advanced Access Data Systems
+	;;
+esac
+
+return 0
