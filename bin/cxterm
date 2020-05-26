@@ -14,10 +14,11 @@ case "$RANDOM" in
   *8) fg=white;  bg=blue;;
   *9) fg=gold;   bg=darkred ;;
 esac
-exec xterm -fg ${fg:-white} -bg ${bg:-black} "$@" >/dev/null 2>&1
 
+xterm_opts='-class UXTerm -title uxterm -u8'
+exec xterm -fg ${fg:-white} -bg ${bg:-black} $xterm_opts "$@" >/dev/null 2>&1
 
-# Good color combos - Note this is sorted list
+# Other good color combos - Note this is sorted list
   *X) fg=black;  bg=gold ;;
   *X) fg=black;  bg=grey ;;
   *X) fg=black;  bg=lightblue ;;
@@ -31,4 +32,3 @@ exec xterm -fg ${fg:-white} -bg ${bg:-black} "$@" >/dev/null 2>&1
 
 # Bad color combos :(
   # fg=black; bg=purple ;;  
-
