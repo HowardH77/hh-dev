@@ -1,12 +1,12 @@
 #! /bin/bash
-#  Synopsis:    Col [-h] [N_Columns]
+#  Synopsis:    Col [-2] [N_Columns]
 #  Description: Print column ruler
-#               Options: -h  Print a one-line ruler (default: two-line ruler)
+#               Options: -2  Print a two-line ruler (default: one-line ruler)
 
-ruler_lines=2
-while getopts h opt; do
+ruler_lines=1
+while getopts 2 opt; do
 	case "$opt" in
-	  h) ruler_lines=1 ;;
+	  2) ruler_lines=2 ;;
 	esac
 done
 shift $(expr $OPTIND - 1)

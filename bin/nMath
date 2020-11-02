@@ -1,0 +1,69 @@
+# !/bin/sh
+# Synopsis:    nMath [-x]
+# Description: Add sequence expressions (ie: X..Y where X denotes a start value and Y is the end value) to "bc -l" calculations
+#              Example: "1..10^2" is translated into the bc statement "for (seq1=1; seq1<=10; seq1++) seq1^2"
+#              Options: -x  Print input expression followed by a ‘==>’.  This is useful for trace/debugging
+
+convert_sequence()
+{
+	awk -vtrace=${1:-0} '
+	function convert_sequence(expr, seq_num,   seq, seq_var, ge_le, incr_decr) {
+	    if (seq_num == "") seq_num = 1
+	    # print "TRACE: convert_sequence(" expr ", " seq_num ")"
+	    if ((n = match(expr, /[0-9]+\.\.[0-9]+/)) > 0) {
+	        # print "TRACE: match(" expr ") RSTART = " RSTART, "RLENGTH = " RLENGTH
+	        seq = substr(expr, RSTART, RLENGTH)
+	        # print "TRACE: seq = " seq
+	        seq_var = "seq" seq_num
+	        sub(/[0-9]+\.\.[0-9]+/, seq_var, expr)
+	        # print "TRACE: sub(expr) = " expr
+	        split(seq, start_end, "\.\.")
+	        if (start_end[1] < start_end[2]) {
+	            ge_le = "<="
+	            incr_decr = "++"
+	        } else {
+	            ge_le = ">="
+	            incr_decr = "--"
+	        }
+	        return "for (" seq_var "=" start_end[1] "; " seq_var ge_le start_end[2] "; " \
+	                       seq_var incr_decr ") " convert_sequence(expr, ++seq_num)
+	    }
+	    return expr
+	}
+
+
+	{ if (trace == 1) print "\"" $0 " ==>\n\""
+	  print convert_sequence($0)
+	}
+	' | bc -l
+}
+
+
+# Main
+if [ "$1" = "-x" ]; then
+	trace=1
+	shift
+fi
+if [ $# -gt 0 ]; then
+	for arg; do
+		echo "$arg" | convert_sequence $trace
+	done
+else
+	convert_sequence $trace
+fi
+exit 0
+
+# Test no translation, stdin and cmdline args
+:!echo '2*5' | %
+:!echo '2*5' | % -x
+:!%    '2^8' '2^7' '2^6' '2^5'
+:!% -x '2^8' '2^7' '2^6' '2^5'
+
+# Test single sequence translation increment/decrement
+:!% -x '1..5^2'
+:!% -x '5..1^2'
+
+# Test multiple sequence, increment/decrement translations
+:!% -x '1..3*4..2'
+# -> for (seq1=1; seq1<=3; seq1++) for (seq2=4; seq2>=2; seq2--) seq1*seq2
+

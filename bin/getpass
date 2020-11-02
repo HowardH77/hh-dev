@@ -1,0 +1,14 @@
+#! /bin/sh
+#  Synopsis:    getpass env_variable
+#  Description: Read and set env variable with 'tty echo' disabled
+#               Usage: source $HOME/bin/getpass; getpass ENV_var_name
+
+getpass()
+{
+	typeset -n varname=$1
+	stty -echo && read varname
+	retcode=$?
+	stty echo
+	typeset +n varname
+	return $retcode
+}
