@@ -99,6 +99,7 @@ pop(int_stack_t *stack, int *val)
 }
 
 
+static int
 ppsql(FILE *fp_in)
 {
 	int_stack_t *indent_stack = new_int_stack(255);
@@ -178,9 +179,8 @@ ppsql(FILE *fp_in)
 }
 
 
-main( argc, argv )
-int argc;
-char **argv;
+int
+main(int argc, char **argv)
 {
 	int retcode;
 

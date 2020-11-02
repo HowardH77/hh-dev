@@ -10,7 +10,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
+int
 main(int argc, char *argv[])
 {
 	int opt;
@@ -33,8 +35,8 @@ main(int argc, char *argv[])
 			quotes = "";
 			break;
 		default:
-			fprintf(stderr, "%s: Invalid option '%c'\n", opt);
-			fprintf(stderr, "Syntax: %s [-ciq] command command_options command_args ...");
+			fprintf(stderr, "%s: Invalid option '%c'\n", argv[0], opt);
+			fprintf(stderr, "Syntax: %s [-ciq] command command_options command_args ...", argv[0]);
 			exit(1);
 		}
 	}

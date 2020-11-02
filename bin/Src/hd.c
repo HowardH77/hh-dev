@@ -6,6 +6,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 #include <ctype.h>
 
 #define SEP ' '
@@ -97,6 +99,7 @@ hexdump(FILE *fp, int count_chars)
 }
 
 
+int
 main(int argc, char *argv[])
 {
 	char opt;

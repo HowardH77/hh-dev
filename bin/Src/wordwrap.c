@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <ctype.h>
 #include "trace.h"
 
@@ -48,6 +49,7 @@ int ww(FILE *fp, int wrap_col)
 }
 
 
+int
 main(int argc, char *argv[])
 {
         int opt;
@@ -72,19 +74,19 @@ main(int argc, char *argv[])
                 exit(1);
         }
 
-        if (argc >= 1) {
-                for (indx = 1; indx < argc; ++indx) {
+	if (optind == argc) {
+                ww(stdin, wrap_col);
+	} else {
+		for (indx = optind; indx < argc; ++indx) {
                         if ((fp = fopen(argv[indx], "r")) != (FILE *)0) {
                                 ww(fp, wrap_col);
                                 fclose(fp);
                         }
                 }
-        } else {
-                ww(stdin, wrap_col);
         }
         exit(0);
 }
 /*
-:!cc -g -DDTRACE -I. %
+:!cc -g -DDTRACE -I$HOME/dev/lib %
 :!( Col 80; a.out ~/.tmp/.rl 2>$HOME/.tmp/ww.stderr; ) | vip $HOME/.tmp/ww.stderr
 */
