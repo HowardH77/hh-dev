@@ -1,15 +1,56 @@
 #! /bin/sh
-#  Synopsis:    Math [-i inputbase] [-o outputbase] [number | expression ] ...
-#  Description: Math performs base number conversions, and 'bc -l' calculations
-#               Note: Renaming or ln'ing (hard/symbolic) the script alters the default input 
-#                     and output base (ie: b2o,b2d,b2x, o2b,o2d,o2x, d2b,d2o,d2x, x2b,x2d,x2d)
-#                                          (b=binary, o=octal, d=decimal, x=hexadecimal)
+#  Synopsis:    Math [-i inputbase] [-o outputbase] [-x] [number | expression ] ...
+#  Description: Math performs 'bc -l' type calculations and number base conversions.
+#               Note: If the input base == 10, sequence expressions are also enabled.
+#                     (ie: "x..y" represents a range of integers from x to y and is 
+#                           translated into a "for (n=x; n<y; ++|--n) {...}" loop).
+#               Note2: Renaming or ln'ing (hard or symbolic) the script alters the 
+#                      default input and output base.
+#                      (ie: b2o,b2d,b2x, o2b,o2d,o2x, d2b,d2o,d2x, x2b,x2d,x2d
+#                           where b=binary, o=octal, d=decimal, x=hexadecimal)
+#               Options: -x  Trace input (Option is valid only if input base == 10)
+#                        -i  Set input base (default = 10)
+#                        -o  Set output base (default = 10)
 #  Example Usage: $ Math;  # Interactive decimal calculator
-#                 $ Math '56*87' '42*57'
-#                 $ x2d FF 'FF + 1'
-#                 $ echo 'ff ff+1' | x2d 
-#                 $ square '(2+3)' 1.11111111 
+#                 $ Math '56*87' '42*57'  # 4872 2394
+#                 $ x2d FF 'FF + 1'  # 255 256
+#                 $ echo 'ff ff+1' | x2d  # 255 256
+#                 $ Math '2^0..5'  # 2^0, 2^1, 2^2, 2^3, 2^4, 2^5
 
+convert_sequence()
+{
+	awk -vtrace=${1:-0} '
+	function convert_sequence(expr, seq_var_num,   seq, seq_var, ge_le, incr_decr) {
+	    if (seq_var_num == "") seq_var_num = 1
+	    # print "TRACE: convert_sequence(" expr ", " seq_var_num ")"
+	    if ((n = match(expr, /[0-9]+\.\.[0-9]+/)) > 0) {
+	        # print "TRACE: match(" expr ") RSTART = " RSTART, "RLENGTH = " RLENGTH
+	        seq = substr(expr, RSTART, RLENGTH)
+	        # print "TRACE: seq = " seq
+	        seq_var = "seq" seq_var_num
+	        sub(/[0-9]+\.\.[0-9]+/, seq_var, expr)
+	        # print "TRACE: sub(expr) = " expr
+	        split(seq, start_end, "\.\.")
+	        if (start_end[1] < start_end[2]) {
+	            ge_le = "<="
+	            incr_decr = "++"
+	        } else {
+	            ge_le = ">="
+	            incr_decr = "--"
+	        }
+	        return "for (" seq_var "=" start_end[1] "; " seq_var ge_le start_end[2] "; " \
+	                       seq_var incr_decr ") " convert_sequence(expr, ++seq_var_num)
+	    }
+	    return expr
+	}
+
+	{ if (trace == 1) print "\"" $0 " ==>\n\""
+	  print convert_sequence($0)
+	} '
+}
+
+
+# Main
 obase=10
 ibase=10
 case $0 in
@@ -25,10 +66,9 @@ case $0 in
   *x2b) ibase=16; obase=2; unset exp ;;
   *x2o) ibase=16; obase=8; unset exp ;;
   *x2d) ibase=16; obase=10; unset exp ;;
-  *square) ibase=10; obase=10; exp=2 ;;
-  *cube) ibase=10; obase=10; exp=3 ;;
-  *Math) while getopts i:o: opt; do
+  *Math) while getopts xi:o: opt; do
                 case "$opt" in
+                  x) trace=1;;
                   i) ibase=$OPTARG;;
                   o) obase=$OPTARG;;
                 esac
@@ -41,9 +81,15 @@ esac
         echo "obase=$obase"
         echo "ibase=$ibase"
         if [ $# -gt 0 ]; then
-                for expr do echo "$expr${exp:+^$exp}"; done
+                for expr do echo "$expr"; done
         else
                 cat
-        fi | if [ $ibase -eq 16 ]; then tr 'a-f' 'A-F'; else cat; fi
+        fi | if [ $ibase -eq 16 ]; then 
+		tr 'a-f' 'A-F'
+        elif [ $ibase -eq 10 ]; then 
+		convert_sequence $trace
+	else
+                cat
+	fi 
 } | bc -l 
 
